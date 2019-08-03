@@ -318,12 +318,9 @@ def generate_dir_rst(src_dir, target_dir, gallery_conf, seen_backrefs):
         length=len(sorted_listdir))
     clean_modules(gallery_conf, src_dir)  # fix gh-316
 
-    print(target_dir, src_dir, gallery_conf)
-    # gallery_conf = {}
     fname_list = list(iterator)
     out_gen = Parallel(n_jobs=-1)(generate_file_rst(fname, target_dir, src_dir, gallery_conf) for fname in fname_list)
     for i, fname in enumerate(fname_list):
-          # XXX run this in parallel
         intro, time_elapsed = out_gen[i]
         clean_modules(gallery_conf, fname)
         src_file = os.path.normpath(os.path.join(src_dir, fname))
