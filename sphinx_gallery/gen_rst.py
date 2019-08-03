@@ -30,6 +30,11 @@ import sys
 import traceback
 import codeop
 
+from joblib.externals.loky import set_loky_pickler
+from joblib import parallel_backend
+from joblib import Parallel, delayed
+from joblib import wrap_non_picklable_objects
+
 from .scrapers import (save_figures, ImagePathIterator, clean_modules,
                        _find_image_ext)
 from .utils import replace_py_ipynb, scale_image, get_md5sum, _replace_md5
@@ -312,9 +317,14 @@ def generate_dir_rst(src_dir, target_dir, gallery_conf, seen_backrefs):
         'generating gallery for %s... ' % build_target_dir,
         length=len(sorted_listdir))
     clean_modules(gallery_conf, src_dir)  # fix gh-316
-    for fname in iterator:
-        intro, time_elapsed = generate_file_rst(
-            fname, target_dir, src_dir, gallery_conf)
+
+    print(target_dir, src_dir, gallery_conf)
+    # gallery_conf = {}
+    fname_list = list(iterator)
+    out_gen = Parallel(n_jobs=-1)(generate_file_rst(fname, target_dir, src_dir, gallery_conf) for fname in fname_list)
+    for i, fname in enumerate(fname_list):
+          # XXX run this in parallel
+        intro, time_elapsed = out_gen[i]
         clean_modules(gallery_conf, fname)
         src_file = os.path.normpath(os.path.join(src_dir, fname))
         computation_times.append((time_elapsed, src_file))
@@ -618,7 +628,8 @@ def execute_script(script_blocks, script_vars, gallery_conf):
 
     return output_blocks, time_elapsed
 
-
+@delayed
+@wrap_non_picklable_objects
 def generate_file_rst(fname, target_dir, src_dir, gallery_conf):
     """Generate the rst file for a given example.
 
