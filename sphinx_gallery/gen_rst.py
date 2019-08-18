@@ -464,8 +464,9 @@ def _get_memory_base(gallery_conf):
     return memory_base
 
 
+# TODO: remove gallery_conf from argument list
 def execute_code_block(compiler, block, example_globals,
-                       script_vars, show_memory):
+                       script_vars, show_memory, gallery_conf):
     """Executes the code block of the example file"""
     blabel, bcontent, lineno = block
     # If example is not suitable to run, skip executing its blocks
@@ -608,7 +609,7 @@ def execute_script(script_blocks, script_vars, gallery_conf):
     script_vars['memory_delta'] = [memory_start]
     output_blocks = [execute_code_block(compiler, block,
                                         example_globals,
-                                        script_vars, gallery_conf["show_memory"])
+                                        script_vars, gallery_conf["show_memory"], gallery_conf)
                      for block in script_blocks]
     time_elapsed = time() - t_start
     script_vars['memory_delta'] = (  # actually turn it into a delta now
