@@ -319,7 +319,7 @@ def generate_dir_rst(src_dir, target_dir, gallery_conf, seen_backrefs):
     clean_modules(gallery_conf, src_dir)  # fix gh-316
 
     fname_list = list(iterator)
-    out_gen = Parallel(n_jobs=-1)(generate_file_rst(fname, target_dir, src_dir, gallery_conf) for fname in fname_list)
+    out_gen = Parallel(n_jobs=1)(generate_file_rst(fname, target_dir, src_dir, gallery_conf) for fname in fname_list)
     for i, fname in enumerate(fname_list):
         intro, time_elapsed = out_gen[i]
         clean_modules(gallery_conf, fname)
@@ -426,9 +426,9 @@ class _exec_once(object):
                 exec(self.code, self.globals)
 
 
-def _memory_usage(func, gallery_conf):
+def _memory_usage(func, show_memory):
     """Get memory usage of a function call."""
-    if gallery_conf['show_memory']:
+    if show_memory:
         from memory_profiler import memory_usage
         assert callable(func)
         mem, out = memory_usage(func, max_usage=True, retval=True,
@@ -465,7 +465,7 @@ def _get_memory_base(gallery_conf):
 
 
 def execute_code_block(compiler, block, example_globals,
-                       script_vars, gallery_conf):
+                       script_vars, show_memory):
     """Executes the code block of the example file"""
     blabel, bcontent, lineno = block
     # If example is not suitable to run, skip executing its blocks
@@ -495,7 +495,7 @@ def execute_code_block(compiler, block, example_globals,
         ast.increment_lineno(code_ast, lineno - 1)
         _, mem = _memory_usage(_exec_once(
             compiler(code_ast, src_file, 'exec'), example_globals),
-            gallery_conf)
+            show_memory)
     except Exception:
         sys.stdout.flush()
         sys.stderr.flush()
@@ -602,13 +602,13 @@ def execute_script(script_blocks, script_vars, gallery_conf):
 
     t_start = time()
     gc.collect()
-    _, memory_start = _memory_usage(lambda: None, gallery_conf)
+    _, memory_start = _memory_usage(lambda: None, gallery_conf["show_memory"])
     compiler = codeop.Compile()
     # include at least one entry to avoid max() ever failing
     script_vars['memory_delta'] = [memory_start]
     output_blocks = [execute_code_block(compiler, block,
                                         example_globals,
-                                        script_vars, gallery_conf)
+                                        script_vars, gallery_conf["show_memory"])
                      for block in script_blocks]
     time_elapsed = time() - t_start
     script_vars['memory_delta'] = (  # actually turn it into a delta now
