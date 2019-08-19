@@ -139,6 +139,7 @@ def _complete_gallery_conf(sphinx_gallery_conf, src_dir, plot_gallery,
             if scraper in _scraper_dict:
                 scraper = _scraper_dict[scraper]
             else:
+                # TODO: move this into the parallelized part of the script
                 orig_scraper = scraper
                 try:
                     scraper = import_module(scraper)
